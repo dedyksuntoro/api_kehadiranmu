@@ -1,0 +1,22 @@
+meta {
+  name: Update Absensi
+  type: http
+  seq: 6
+}
+
+put {
+  url: http://localhost/api_kehadiranmu/absensi/keluar
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NDA3MDU4MjUsImV4cCI6MTc0MDcwOTQyNSwiZGF0YSI6eyJpZCI6MiwiZW1haWwiOiJ1c2VyQHVzZXIuY29tIn19.XRhPkvfqBZ1uy-J6g9TnUrOkuF1Hs-Uw3ommTsCh7Rg
+}
+
+body:json {
+  {
+    "latitude": -6.123456,
+    "longitude": 106.123456
+  }
+}

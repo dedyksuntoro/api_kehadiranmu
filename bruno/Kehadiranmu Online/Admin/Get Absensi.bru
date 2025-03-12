@@ -1,0 +1,23 @@
+meta {
+  name: Get Absensi
+  type: http
+  seq: 9
+}
+
+get {
+  url: http://localhost/api_kehadiranmu/admin/absensi
+  body: none
+  auth: bearer
+}
+
+params:query {
+  ~tanggal_awal: 2025-02-26
+  ~tanggal_akhir: 2025-02-28
+  ~shift: malam
+  ~user_id: 2
+  ~status_telat: tepat waktu
+}
+
+auth:bearer {
+  token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NDA3MTEyMzgsImV4cCI6MTc0MDcxNDgzOCwiZGF0YSI6eyJpZCI6MSwiZW1haWwiOiJzdXBlckB1c2VyLmNvbSIsInJvbGUiOiJhZG1pbiJ9fQ.9n5xx1guDal4v9HJL-h71GMOleJp6-9IgV2Vsnprb0U
+}

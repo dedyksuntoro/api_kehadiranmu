@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Kehadiranmu Lokal",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

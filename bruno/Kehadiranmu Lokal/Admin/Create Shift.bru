@@ -1,0 +1,23 @@
+meta {
+  name: Create Shift
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost/api_kehadiranmu/admin/shift
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NDA3MDkwNzEsImV4cCI6MTc0MDcxMjY3MSwiZGF0YSI6eyJpZCI6MSwiZW1haWwiOiJzdXBlckB1c2VyLmNvbSIsInJvbGUiOiJhZG1pbiJ9fQ.8PZ8ihr15n60Yhsn-LAvJ2nkPH-bmrqSDK4lrkAMjms
+}
+
+body:json {
+  {
+    "shift": "malam_baru",
+    "jam_mulai": "23:00:00",
+    "jam_selesai": "07:00:00"
+  }
+}

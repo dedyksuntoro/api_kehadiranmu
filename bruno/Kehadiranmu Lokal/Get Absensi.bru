@@ -1,0 +1,15 @@
+meta {
+  name: Get Absensi
+  type: http
+  seq: 5
+}
+
+get {
+  url: http://localhost/api_kehadiranmu/absensi
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NDE3NDY2NTMsImV4cCI6MTc0MTc1MDI1MywiZGF0YSI6eyJpZCI6MiwiZW1haWwiOiJ1c2VyQHVzZXIuY29tIiwicm9sZSI6InVzZXIifX0.xytE8U2XftoDnsexynEZCtHe38QCNJK1cNbnm2-ilTQ
+}
