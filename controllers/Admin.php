@@ -10,6 +10,7 @@ class Admin {
     private $shift;
     private $lokasi;
     private $absensi;
+    private $user;
     private $secret_key = "1q2w3e4r5t6y7u8i9o0p-[=]";
 
     public function __construct() {
@@ -18,27 +19,38 @@ class Admin {
         $this->shift = new ShiftModel($db);
         $this->lokasi = new LokasiModel($db);
         $this->absensi = new AbsensiModel($db);
+        $this->user = new UserModel($db);
     }
 
     private function verifyAdminToken() {
         $headers = apache_request_headers();
-        if (!isset($headers['Authorization'])) {
-            http_response_code(401);
-            echo json_encode(["message" => "Token required"]);
-            exit;
+        error_log('Request Headers: ' . json_encode($headers));
+        
+        $authHeader = null;
+        foreach ($headers as $key => $value) {
+            if (strtolower($key) === 'authorization') {
+                $authHeader = $value;
+                break;
+            }
         }
-        $token = str_replace("Bearer ", "", $headers['Authorization']);
-        try {
-            $decoded = JWT::decode($token, new \Firebase\JWT\Key($this->secret_key, 'HS256'));
-            if ($decoded->data->role !== 'admin') {
-                http_response_code(403);
-                echo json_encode(["message" => "Access denied. Admin only"]);
+        if ($authHeader !== null) {
+            $token = str_replace("Bearer ", "", $authHeader);
+            try {
+                $decoded = JWT::decode($token, new \Firebase\JWT\Key($this->secret_key, 'HS256'));
+                if ($decoded->data->role !== 'admin') {
+                    http_response_code(403);
+                    echo json_encode(["message" => "Access denied. Admin only"]);
+                    exit;
+                }
+                return $decoded->data->id;
+            } catch (Exception $e) {
+                http_response_code(401);
+                echo json_encode(["message" => "Invalid token"]);
                 exit;
             }
-            return $decoded->data->id;
-        } catch (Exception $e) {
+        } else {
             http_response_code(401);
-            echo json_encode(["message" => "Invalid token"]);
+            echo json_encode(["message" => "Token required"]);
             exit;
         }
     }
@@ -219,6 +231,102 @@ class Admin {
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(["message" => "Failed to fetch absensi: " . $e->getMessage()]);
+        }
+    }
+
+    public function getUsers() {
+        $this->verifyAdminToken();
+        $nama = isset($_GET['nama']) ? filter_var($_GET['nama'], FILTER_SANITIZE_STRING) : null;
+        $role = isset($_GET['role']) ? filter_var($_GET['role'], FILTER_SANITIZE_STRING) : 'user'; // Default ke 'user'
+
+        // Validasi role
+        if ($role && !in_array($role, ['admin', 'user'])) {
+            http_response_code(400);
+            echo json_encode(["message" => "Role tidak valid. Gunakan 'admin' atau 'user'"]);
+            return;
+        }
+
+        $users = $this->user->getAllUsers($nama, $role);
+        http_response_code(200);
+        echo json_encode($users);
+    }
+
+    public function createUser() {
+        $this->verifyAdminToken();
+        $data = json_decode(file_get_contents("php://input"));
+
+        if (!empty($data->nama) && !empty($data->email) && !empty($data->password) && !empty($data->nomor_telepon) && !empty($data->role)) {
+            $this->user->nama = filter_var($data->nama, FILTER_SANITIZE_STRING);
+            $this->user->email = filter_var($data->email, FILTER_SANITIZE_EMAIL);
+            $this->user->password = password_hash($data->password, PASSWORD_DEFAULT); // Hash password
+            $this->user->nomor_telepon = filter_var($data->nomor_telepon, FILTER_SANITIZE_STRING);
+            $this->user->role = filter_var($data->role, FILTER_SANITIZE_STRING);
+
+            if ($this->user->isEmailDuplicate($this->user->email)) {
+                http_response_code(400);
+                echo json_encode(["message" => "Email sudah digunakan"]);
+                return;
+            }
+
+            if ($this->user->create()) {
+                http_response_code(201);
+                echo json_encode(["message" => "Karyawan berhasil ditambahkan"]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["message" => "Gagal menambahkan karyawan"]);
+            }
+        } else {
+            http_response_code(400);
+            echo json_encode(["message" => "Data tidak lengkap"]);
+        }
+    }
+
+    public function updateUser($id) {
+        $this->verifyAdminToken();
+        $data = json_decode(file_get_contents("php://input"));
+
+        if (!empty($data->nama) && !empty($data->email) && !empty($data->nomor_telepon) && !empty($data->role)) {
+            $this->user->id = $id;
+            $this->user->nama = filter_var($data->nama, FILTER_SANITIZE_STRING);
+            $this->user->email = filter_var($data->email, FILTER_SANITIZE_EMAIL);
+            $this->user->nomor_telepon = filter_var($data->nomor_telepon, FILTER_SANITIZE_STRING);
+            $this->user->role = filter_var($data->role, FILTER_SANITIZE_STRING);
+            $this->user->password = !empty($data->password) ? password_hash($data->password, PASSWORD_DEFAULT) : null;
+
+            if ($this->user->isEmailDuplicate($this->user->email, $id)) {
+                http_response_code(400);
+                echo json_encode(["message" => "Email sudah digunakan oleh karyawan lain"]);
+                return;
+            }
+
+            if ($this->user->update()) {
+                http_response_code(200);
+                echo json_encode(["message" => "Karyawan berhasil diperbarui"]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["message" => "Gagal memperbarui karyawan"]);
+            }
+        } else {
+            http_response_code(400);
+            echo json_encode(["message" => "Data tidak lengkap"]);
+        }
+    }
+
+    public function deleteUser($id) {
+        $this->verifyAdminToken();
+        $this->user->id = $id;
+
+        if ($this->user->getUserById($id)) {
+            if ($this->user->delete()) {
+                http_response_code(200);
+                echo json_encode(["message" => "Karyawan berhasil dihapus"]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["message" => "Gagal menghapus karyawan"]);
+            }
+        } else {
+            http_response_code(404);
+            echo json_encode(["message" => "Karyawan tidak ditemukan"]);
         }
     }
 }

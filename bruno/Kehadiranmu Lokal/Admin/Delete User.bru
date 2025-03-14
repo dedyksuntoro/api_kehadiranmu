@@ -1,0 +1,15 @@
+meta {
+  name: Delete User
+  type: http
+  seq: 13
+}
+
+delete {
+  url: http://localhost/api_kehadiranmu/admin/users/5
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NDE5MjM3OTIsImV4cCI6MTc0MTkyNzM5MiwiZGF0YSI6eyJpZCI6MSwiZW1haWwiOiJzdXBlckB1c2VyLmNvbSIsInJvbGUiOiJhZG1pbiJ9fQ.hamRGP_IMYVAK0SRxwX3Zma3PsHk6yCf09Q9f4fwXJI
+}

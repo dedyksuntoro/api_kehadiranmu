@@ -71,6 +71,11 @@ switch ($controller) {
                 http_response_code(400);
                 echo json_encode(["message" => "Invalid request method"]);
             }
+        } elseif ($method === 'users') {
+            if ($request_method === 'GET' && !$id) $admin->getUsers();
+            elseif ($request_method === 'POST') $admin->createUser();
+            elseif ($request_method === 'PUT' && $id) $admin->updateUser($id);
+            elseif ($request_method === 'DELETE' && $id) $admin->deleteUser($id);
         } else {
             http_response_code(404);
             echo json_encode(["message" => "Endpoint not found"]);

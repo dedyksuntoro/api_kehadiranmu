@@ -6,7 +6,7 @@ use \Firebase\JWT\JWT;
 
 class Absensi {
     private $absensi;
-    private $secret_key = "1q2w3e4r5t6y7u8i9o0p-[=]"; // Samakan dengan Auth
+    private $secret_key = "1q2w3e4r5t6y7u8i9o0p-[=]";
 
     public function __construct() {
         $database = new Database();
@@ -56,6 +56,16 @@ class Absensi {
             $this->absensi->longitude = filter_var($data->longitude, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
             $this->absensi->foto_path = filter_var($data->foto_path, FILTER_SANITIZE_STRING);
     
+            if (!$this->absensi->checkShiftAvailability()) {
+                http_response_code(400);
+                echo json_encode(["message" => "Tidak ada shift yang tersedia, hubungi admin"]);
+                return;
+            }
+            if (!$this->absensi->checkLokasiAvailability()) {
+                http_response_code(400);
+                echo json_encode(["message" => "Tidak ada lokasi yang tersedia, hubungi admin"]);
+                return;
+            }
             if (!$this->absensi->isWithinLocation($this->absensi->latitude, $this->absensi->longitude)) {
                 http_response_code(400);
                 echo json_encode(["message" => "Lokasi tidak valid untuk absensi"]);
