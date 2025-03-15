@@ -39,18 +39,18 @@ class Admin {
                 $decoded = JWT::decode($token, new \Firebase\JWT\Key($this->secret_key, 'HS256'));
                 if ($decoded->data->role !== 'admin') {
                     http_response_code(403);
-                    echo json_encode(["message" => "Access denied. Admin only"]);
+                    echo json_encode(["message" => "Akses ditolak. Hanya admin"]);
                     exit;
                 }
                 return $decoded->data->id;
             } catch (Exception $e) {
                 http_response_code(401);
-                echo json_encode(["message" => "Invalid token"]);
+                echo json_encode(["message" => "Token tidak valid"]);
                 exit;
             }
         } else {
             http_response_code(401);
-            echo json_encode(["message" => "Token required"]);
+            echo json_encode(["message" => "Token diperlukan"]);
             exit;
         }
     }
@@ -80,14 +80,14 @@ class Admin {
     
             if ($this->shift->create()) {
                 http_response_code(201);
-                echo json_encode(["message" => "Shift created successfully"]);
+                echo json_encode(["message" => "Shift berhasil dibuat"]);
             } else {
                 http_response_code(500);
-                echo json_encode(["message" => "Failed to create shift"]);
+                echo json_encode(["message" => "Gagal membuat shift"]);
             }
         } else {
             http_response_code(400);
-            echo json_encode(["message" => "Incomplete data"]);
+            echo json_encode(["message" => "Data tidak lengkap"]);
         }
     }
 
@@ -109,14 +109,14 @@ class Admin {
     
             if ($this->shift->update()) {
                 http_response_code(200);
-                echo json_encode(["message" => "Shift updated successfully"]);
+                echo json_encode(["message" => "Shift berhasil diperbarui"]);
             } else {
                 http_response_code(500);
-                echo json_encode(["message" => "Failed to update shift"]);
+                echo json_encode(["message" => "Gagal memperbarui shift"]);
             }
         } else {
             http_response_code(400);
-            echo json_encode(["message" => "Incomplete data"]);
+            echo json_encode(["message" => "Data tidak lengkap"]);
         }
     }
 
@@ -126,10 +126,10 @@ class Admin {
 
         if ($this->shift->delete()) {
             http_response_code(200);
-            echo json_encode(["message" => "Shift deleted successfully"]);
+            echo json_encode(["message" => "Shift berhasil dihapus"]);
         } else {
             http_response_code(500);
-            echo json_encode(["message" => "Failed to delete shift"]);
+            echo json_encode(["message" => "Gagal menghapus shift"]);
         }
     }
 
@@ -159,14 +159,14 @@ class Admin {
     
             if ($this->lokasi->create()) {
                 http_response_code(201);
-                echo json_encode(["message" => "Lokasi created successfully"]);
+                echo json_encode(["message" => "Lokasi berhasil dibuat"]);
             } else {
                 http_response_code(500);
-                echo json_encode(["message" => "Failed to create lokasi"]);
+                echo json_encode(["message" => "Gagal membuat lokasi"]);
             }
         } else {
             http_response_code(400);
-            echo json_encode(["message" => "Incomplete data"]);
+            echo json_encode(["message" => "Data tidak lengkap"]);
         }
     }
     
@@ -189,14 +189,14 @@ class Admin {
     
             if ($this->lokasi->update()) {
                 http_response_code(200);
-                echo json_encode(["message" => "Lokasi updated successfully"]);
+                echo json_encode(["message" => "Lokasi berhasil diperbarui"]);
             } else {
                 http_response_code(500);
-                echo json_encode(["message" => "Failed to update lokasi"]);
+                echo json_encode(["message" => "Gagal memperbarui lokasi"]);
             }
         } else {
             http_response_code(400);
-            echo json_encode(["message" => "Incomplete data"]);
+            echo json_encode(["message" => "Data tidak lengkap"]);
         }
     }
 
@@ -206,10 +206,10 @@ class Admin {
 
         if ($this->lokasi->delete()) {
             http_response_code(200);
-            echo json_encode(["message" => "Lokasi deleted successfully"]);
+            echo json_encode(["message" => "Lokasi berhasil dihapus"]);
         } else {
             http_response_code(500);
-            echo json_encode(["message" => "Failed to delete lokasi"]);
+            echo json_encode(["message" => "Gagal menghapus lokasi"]);
         }
     }
 
@@ -230,7 +230,7 @@ class Admin {
             echo json_encode($result);
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(["message" => "Failed to fetch absensi: " . $e->getMessage()]);
+            echo json_encode(["message" => "Gagal mengambil absensi: " . $e->getMessage()]);
         }
     }
 

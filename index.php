@@ -69,7 +69,7 @@ switch ($controller) {
                 $admin->getAllAbsensi();
             } else {
                 http_response_code(400);
-                echo json_encode(["message" => "Invalid request method"]);
+                echo json_encode(["message" => "Metode permintaan tidak valid"]);
             }
         } elseif ($method === 'users') {
             if ($request_method === 'GET' && !$id) $admin->getUsers();
@@ -78,12 +78,12 @@ switch ($controller) {
             elseif ($request_method === 'DELETE' && $id) $admin->deleteUser($id);
         } else {
             http_response_code(404);
-            echo json_encode(["message" => "Endpoint not found"]);
+            echo json_encode(["message" => "Titik akhir tidak ditemukan"]);
         }
         break;
     default:
         http_response_code(404);
-        echo json_encode(["message" => "Endpoint not found"]);
+        echo json_encode(["message" => "Titik akhir tidak ditemukan"]);
         break;
 }
 ?>

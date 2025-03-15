@@ -27,7 +27,7 @@ class Auth {
                 $access_payload = [
                     "iat" => time(),
                     "exp" => time() + (60 * 60), // 1 jam
-                    "data" => ["id" => $user_data['id'], "email" => $user_data['email'], "role" => $user_data['role']]
+                    "data" => ["id" => $user_data['id'], "nama" => $user_data['nama'], "email" => $user_data['email'], "role" => $user_data['role']]
                 ];
                 $access_token = JWT::encode($access_payload, $this->secret_key, 'HS256');
     
@@ -41,17 +41,17 @@ class Auth {
     
                 http_response_code(200);
                 echo json_encode([
-                    "message" => "Login successful",
+                    "message" => "Login berhasil",
                     "access_token" => $access_token,
                     "refresh_token" => $refresh_token
                 ]);
             } else {
                 http_response_code(401);
-                echo json_encode(["message" => "Invalid credentials"]);
+                echo json_encode(["message" => "Kredensial tidak valid"]);
             }
         } else {
             http_response_code(400);
-            echo json_encode(["message" => "Email and password required"]);
+            echo json_encode(["message" => "Email dan kata sandi diperlukan"]);
         }
     }
 
@@ -73,23 +73,23 @@ class Auth {
                 $access_payload = [
                     "iat" => time(),
                     "exp" => time() + (60 * 60), // 1 jam
-                    "data" => ["id" => $user_data['id'], "email" => $user_data['email'], "role" => $user_data['role']]
+                    "data" => ["id" => $user_data['id'], "nama" => $user_data['nama'], "email" => $user_data['email'], "role" => $user_data['role']]
                 ];
                 $access_token = JWT::encode($access_payload, $this->secret_key, 'HS256');
 
                 http_response_code(200);
                 echo json_encode([
-                    "message" => "Token refreshed successfully",
+                    "message" => "Token berhasil diperbarui",
                     "access_token" => $access_token
                 ]);
             } catch (Exception $e) {
                 echo('Refresh Error: ' . $e->getMessage());
                 http_response_code(401);
-                echo json_encode(["message" => "Invalid or expired refresh token"]);
+                echo json_encode(["message" => "Pembaruan token tidak valid atau kedaluwarsa"]);
             }
         } else {
             http_response_code(400);
-            echo json_encode(["message" => "Refresh token required"]);
+            echo json_encode(["message" => "Diperlukan pembaruan token"]);
         }
     }
 
@@ -103,14 +103,14 @@ class Auth {
 
             if ($this->user->create()) {
                 http_response_code(201);
-                echo json_encode(["message" => "User registered successfully"]);
+                echo json_encode(["message" => "Pengguna berhasil terdaftar"]);
             } else {
                 http_response_code(500);
-                echo json_encode(["message" => "Failed to register user"]);
+                echo json_encode(["message" => "Gagal mendaftarkan pengguna"]);
             }
         } else {
             http_response_code(400);
-            echo json_encode(["message" => "Incomplete data"]);
+            echo json_encode(["message" => "Data tidak lengkap"]);
         }
     }
 }

@@ -34,12 +34,12 @@ class Absensi {
                 return $decoded->data->id;
             } catch (Exception $e) {
                 http_response_code(401);
-                echo json_encode(["message" => "Invalid token"]);
+                echo json_encode(["message" => "Token tidak valid"]);
                 exit;
             }
         } else {
             http_response_code(401);
-            echo json_encode(["message" => "Token required"]);
+            echo json_encode(["message" => "Token diperlukan"]);
             exit;
         }
     }
@@ -74,14 +74,14 @@ class Absensi {
     
             if ($this->absensi->create()) {
                 http_response_code(201);
-                echo json_encode(["message" => "Absensi recorded successfully", "foto_path" => $this->absensi->foto_path]);
+                echo json_encode(["message" => "Absensi masuk tercatat", "foto_path" => $this->absensi->foto_path]);
             } else {
                 http_response_code(400);
                 echo json_encode(["message" => "Sudah absen masuk untuk shift ini"]);
             }
         } else {
             http_response_code(400);
-            echo json_encode(["message" => "Incomplete data"]);
+            echo json_encode(["message" => "Data tidak lengkap"]);
         }
     }
 
@@ -121,10 +121,10 @@ class Absensi {
     
         if ($this->absensi->updateLatestCheckOut($user_id, $waktu_keluar, $latitude, $longitude)) {
             http_response_code(200);
-            echo json_encode(["message" => "Absensi keluar recorded"]);
+            echo json_encode(["message" => "Absensi keluar tercatat"]);
         } else {
             http_response_code(404);
-            echo json_encode(["message" => "No absensi found for this shift or already checked out"]);
+            echo json_encode(["message" => "Tidak ditemukan absen untuk shift ini atau sudah check out"]);
         }
     }
 
@@ -133,7 +133,7 @@ class Absensi {
         
         if (!isset($_FILES['foto']) || $_FILES['foto']['error'] !== UPLOAD_ERR_OK) {
             http_response_code(400);
-            echo json_encode(["message" => "No file uploaded or upload error"]);
+            echo json_encode(["message" => "Tidak ada file yang diunggah atau kesalahan unggah"]);
             return;
         }
     
@@ -156,22 +156,22 @@ class Absensi {
     
         if (!in_array($file['type'], $allowed_types) || !in_array($file_extension, $allowed_extensions)) {
             http_response_code(400);
-            echo json_encode(["message" => "Invalid file type. Only JPG/PNG allowed"]);
+            echo json_encode(["message" => "Tipe file tidak valid. Hanya JPG/PNG yang diizinkan"]);
             return;
         }
         if ($file['size'] > 2 * 1024 * 1024) { // Maks 2MB
             http_response_code(400);
-            echo json_encode(["message" => "File too large. Max 2MB"]);
+            echo json_encode(["message" => "File terlalu besar. Maksimal 2 MB"]);
             return;
         }
     
         if (move_uploaded_file($file['tmp_name'], $upload_path)) {
             $foto_path = '/uploads/' . $file_name;
             http_response_code(200);
-            echo json_encode(["message" => "Foto uploaded successfully", "foto_path" => $foto_path]);
+            echo json_encode(["message" => "Foto berhasil diunggah", "foto_path" => $foto_path]);
         } else {
             http_response_code(500);
-            echo json_encode(["message" => "Failed to upload foto"]);
+            echo json_encode(["message" => "Gagal mengunggah foto"]);
         }
     }
 }
