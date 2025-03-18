@@ -254,20 +254,21 @@ class Admin {
     public function createUser() {
         $this->verifyAdminToken();
         $data = json_decode(file_get_contents("php://input"));
-
+    
         if (!empty($data->nama) && !empty($data->email) && !empty($data->password) && !empty($data->nomor_telepon) && !empty($data->role)) {
             $this->user->nama = filter_var($data->nama, FILTER_SANITIZE_STRING);
             $this->user->email = filter_var($data->email, FILTER_SANITIZE_EMAIL);
-            $this->user->password = password_hash($data->password, PASSWORD_DEFAULT); // Hash password
+            $this->user->password = password_hash($data->password, PASSWORD_DEFAULT);
             $this->user->nomor_telepon = filter_var($data->nomor_telepon, FILTER_SANITIZE_STRING);
             $this->user->role = filter_var($data->role, FILTER_SANITIZE_STRING);
-
+            $this->user->shift_id = isset($data->shift_id) ? filter_var($data->shift_id, FILTER_SANITIZE_NUMBER_INT) : null;
+    
             if ($this->user->isEmailDuplicate($this->user->email)) {
                 http_response_code(400);
                 echo json_encode(["message" => "Email sudah digunakan"]);
                 return;
             }
-
+    
             if ($this->user->create()) {
                 http_response_code(201);
                 echo json_encode(["message" => "Karyawan berhasil ditambahkan"]);
@@ -280,25 +281,26 @@ class Admin {
             echo json_encode(["message" => "Data tidak lengkap"]);
         }
     }
-
+    
     public function updateUser($id) {
         $this->verifyAdminToken();
         $data = json_decode(file_get_contents("php://input"));
-
+    
         if (!empty($data->nama) && !empty($data->email) && !empty($data->nomor_telepon) && !empty($data->role)) {
             $this->user->id = $id;
             $this->user->nama = filter_var($data->nama, FILTER_SANITIZE_STRING);
             $this->user->email = filter_var($data->email, FILTER_SANITIZE_EMAIL);
             $this->user->nomor_telepon = filter_var($data->nomor_telepon, FILTER_SANITIZE_STRING);
             $this->user->role = filter_var($data->role, FILTER_SANITIZE_STRING);
+            $this->user->shift_id = isset($data->shift_id) ? filter_var($data->shift_id, FILTER_SANITIZE_NUMBER_INT) : null;
             $this->user->password = !empty($data->password) ? password_hash($data->password, PASSWORD_DEFAULT) : null;
-
+    
             if ($this->user->isEmailDuplicate($this->user->email, $id)) {
                 http_response_code(400);
                 echo json_encode(["message" => "Email sudah digunakan oleh karyawan lain"]);
                 return;
             }
-
+    
             if ($this->user->update()) {
                 http_response_code(200);
                 echo json_encode(["message" => "Karyawan berhasil diperbarui"]);

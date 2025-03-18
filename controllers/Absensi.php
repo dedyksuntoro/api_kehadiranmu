@@ -74,7 +74,11 @@ class Absensi {
     
             if ($this->absensi->create()) {
                 http_response_code(201);
-                echo json_encode(["message" => "Absensi masuk tercatat", "foto_path" => $this->absensi->foto_path]);
+                echo json_encode([
+                    "message" => "Absensi masuk tercatat",
+                    "shift" => $this->absensi->shift,
+                    "foto_path" => $this->absensi->foto_path
+                ]);
             } else {
                 http_response_code(400);
                 echo json_encode(["message" => "Sudah absen masuk untuk shift ini"]);

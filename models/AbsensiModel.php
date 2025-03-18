@@ -20,9 +20,8 @@ class AbsensiModel {
         $this->conn = $db;
     }
 
-    // Fungsi untuk menghitung jarak menggunakan Haversine Formula (dalam meter)
     private function calculateDistance($lat1, $lon1, $lat2, $lon2) {
-        $earthRadius = 6371000; // Radius bumi dalam meter
+        $earthRadius = 6371000;
         $lat1Rad = deg2rad($lat1);
         $lon1Rad = deg2rad($lon1);
         $lat2Rad = deg2rad($lat2);
@@ -37,7 +36,6 @@ class AbsensiModel {
         return $earthRadius * $c;
     }
 
-    // Fungsi untuk mendapatkan nama lokasi berdasarkan koordinat dari tbm_lokasi
     private function getLocationName($latitude, $longitude) {
         $query = "SELECT nama_lokasi, latitude, longitude, radius FROM tbm_lokasi";
         $stmt = $this->conn->prepare($query);
@@ -51,9 +49,7 @@ class AbsensiModel {
                 (float)$location['latitude'],
                 (float)$location['longitude']
             );
-            $radius = (int)$location['radius'];
-            error_log("Checking location: lat=$latitude, lon=$longitude, distance=$distance, radius=$radius");
-            if ($distance <= $radius) {
+            if ($distance <= (int)$location['radius']) {
                 return $location['nama_lokasi'];
             }
         }
@@ -73,32 +69,65 @@ class AbsensiModel {
                 (float)$location['latitude'],
                 (float)$location['longitude']
             );
-            $radius = (int)$location['radius'];
-            if ($distance <= $radius) {
+            if ($distance <= (int)$location['radius']) {
                 return true;
             }
         }
         return false;
     }
 
-    private function determineShift($waktu_masuk) {
-        $hour = (int) date('H', strtotime($waktu_masuk));
-        $tanggal = date('Y-m-d', strtotime($waktu_masuk));
-        
-        if ($hour >= 6 && $hour < 16) {
-            $this->shift = 'pagi';
-            $this->tanggal_shift = $tanggal;
-        } elseif ($hour >= 20 || $hour < 6) {
-            $this->shift = 'malam';
-            $this->tanggal_shift = ($hour < 6) ? date('Y-m-d', strtotime($waktu_masuk . ' -1 day')) : $tanggal;
-        } else {
-            $this->shift = 'siang';
-            $this->tanggal_shift = $tanggal;
+    // Fungsi baru untuk mendapatkan shift berdasarkan waktu masuk dan data shift
+    private function determineShift($user_id, $waktu_masuk) {
+        // Ambil shift_id dari tbm_users
+        $query = "SELECT shift_id FROM tbm_users WHERE id = :user_id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':user_id', $user_id);
+        $stmt->execute();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+        $waktu_masuk_dt = new DateTime($waktu_masuk);
+        $tanggal = $waktu_masuk_dt->format('Y-m-d');
+    
+        if ($user && $user['shift_id']) {
+            // Ambil detail shift berdasarkan shift_id
+            $query = "SELECT shift, jam_mulai, jam_selesai FROM tbm_jam_shift WHERE id = :shift_id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':shift_id', $user['shift_id']);
+            $stmt->execute();
+            $shift = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+            if ($shift) {
+                $this->shift = $shift['shift'];
+                $jam_mulai = DateTime::createFromFormat('H:i:s', $shift['jam_mulai']);
+                $jam_selesai = DateTime::createFromFormat('H:i:s', $shift['jam_selesai']);
+    
+                // Tangani shift malam yang melintasi hari
+                if ($jam_selesai < $jam_mulai) {
+                    $start_dt = new DateTime("$tanggal " . $shift['jam_mulai']);
+                    $end_dt = (clone $start_dt)->modify('+1 day')->setTime(
+                        (int)$jam_selesai->format('H'),
+                        (int)$jam_selesai->format('i'),
+                        (int)$jam_selesai->format('s')
+                    );
+                    if ($waktu_masuk_dt < $start_dt) {
+                        $start_dt->modify('-1 day');
+                        $end_dt->modify('-1 day');
+                    }
+                    $this->tanggal_shift = $start_dt->format('Y-m-d');
+                } else {
+                    $this->tanggal_shift = $tanggal;
+                }
+                return;
+            }
         }
+    
+        // Jika shift_id tidak ada atau tidak valid, fallback ke default
+        $this->shift = 'tidak diketahui';
+        $this->tanggal_shift = $tanggal;
     }
 
     public function hasCheckedInShift($user_id, $waktu_masuk) {
-        $this->determineShift($waktu_masuk);
+        $this->determineShift($user_id, $waktu_masuk); // Pastikan shift sudah ditentukan
         
         $query = "SELECT COUNT(*) FROM " . $this->table_name . " 
                   WHERE user_id = :user_id 
@@ -130,7 +159,6 @@ class AbsensiModel {
     }
 
     public function create() {
-        // Cek apakah ada shift dan lokasi
         if (!$this->checkShiftAvailability()) {
             error_log("Absensi gagal: Tidak ada shift yang tersedia");
             return false;
@@ -139,14 +167,17 @@ class AbsensiModel {
             error_log("Absensi gagal: Tidak ada lokasi yang tersedia");
             return false;
         }
-
+    
+        $this->determineShift($this->user_id, $this->waktu_masuk); // Pass user_id
         if ($this->hasCheckedInShift($this->user_id, $this->waktu_masuk)) {
             return false;
         }
         if (!$this->isWithinLocation($this->latitude, $this->longitude)) {
             return false;
         }
-        $query = "INSERT INTO " . $this->table_name . " (user_id, tanggal, waktu_masuk, latitude, longitude, foto_path, shift, tanggal_shift) 
+    
+        $query = "INSERT INTO " . $this->table_name . " 
+                  (user_id, tanggal, waktu_masuk, latitude, longitude, foto_path, shift, tanggal_shift) 
                   VALUES (:user_id, :tanggal, :waktu_masuk, :latitude, :longitude, :foto_path, :shift, :tanggal_shift)";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':user_id', $this->user_id);
@@ -180,7 +211,6 @@ class AbsensiModel {
         $stmt->execute();
         $absensi = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Tambah nama lokasi dan status telat
         foreach ($absensi as &$item) {
             $item['lokasi_masuk'] = $this->getLocationName(
                 (float)$item['latitude'],
@@ -190,7 +220,6 @@ class AbsensiModel {
                 ? $this->getLocationName((float)$item['latitude_keluar'], (float)$item['longitude_keluar'])
                 : 'Tidak diketahui';
 
-            // Hitung status telat
             $waktu_masuk = strtotime($item['waktu_masuk']);
             $jam_mulai = $this->getShiftJamMulai($item['shift']);
             $jam_mulai_full = strtotime($item['tanggal_shift'] . ' ' . $jam_mulai);
@@ -225,7 +254,7 @@ class AbsensiModel {
         $stmt->bindParam(':shift', $shift);
         $stmt->execute();
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result ? $result['jam_mulai'] : '08:00:00';
+        return $result ? $result['jam_mulai'] : '08:00:00'; // Default jika tidak ada
     }
 
     public function update() {
@@ -286,8 +315,7 @@ class AbsensiModel {
                   LEFT JOIN tbm_users u ON a.user_id = u.id";
         $conditions = [];
         $params = [];
-    
-        // Filter tanggal
+
         if ($tanggal_awal && $tanggal_akhir) {
             $conditions[] = "a.tanggal BETWEEN :tanggal_awal AND :tanggal_akhir";
             $params[':tanggal_awal'] = $tanggal_awal;
@@ -300,25 +328,22 @@ class AbsensiModel {
             $conditions[] = "a.tanggal = :today";
             $params[':today'] = $today;
         }
-    
-        // Filter shift
+
         if ($shift) {
             $conditions[] = "a.shift = :shift";
             $params[':shift'] = $shift;
         }
-    
-        // Filter user_id
+
         if ($user_id) {
             $conditions[] = "a.user_id = :user_id";
             $params[':user_id'] = $user_id;
         }
-    
+
         if (!empty($conditions)) {
             $query .= " WHERE " . implode(" AND ", $conditions);
         }
         $query .= " ORDER BY a.waktu_masuk DESC";
-    
-        // Hitung total record untuk pagination
+
         $count_query = "SELECT COUNT(*) FROM " . $this->table_name . " a" . (empty($conditions) ? "" : " WHERE " . implode(" AND ", $conditions));
         $count_stmt = $this->conn->prepare($count_query);
         foreach ($params as $key => $value) {
@@ -327,11 +352,10 @@ class AbsensiModel {
         $count_stmt->execute();
         $total_records = $count_stmt->fetchColumn();
         $total_pages = ceil($total_records / $limit);
-    
-        // Tambah LIMIT dan OFFSET
+
         $offset = ($page - 1) * $limit;
         $query .= " LIMIT :limit OFFSET :offset";
-    
+
         try {
             $stmt = $this->conn->prepare($query);
             foreach ($params as $key => $value) {
@@ -339,7 +363,7 @@ class AbsensiModel {
             }
             $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
             $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
-    
+
             error_log("Query: $query, Params: " . json_encode(array_merge($params, [':limit' => $limit, ':offset' => $offset])));
             $stmt->execute();
             $absensi_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -347,23 +371,23 @@ class AbsensiModel {
             error_log("Error executing query: " . $e->getMessage());
             throw $e;
         }
-    
+
         $lokasi_query = "SELECT nama_lokasi, latitude, longitude, radius FROM tbm_lokasi";
         $lokasi_stmt = $this->conn->prepare($lokasi_query);
         $lokasi_stmt->execute();
         $locations = $lokasi_stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
         $filtered_list = [];
         foreach ($absensi_list as &$absensi) {
             $waktu_masuk = strtotime($absensi['waktu_masuk']);
             $jam_mulai = $this->getShiftJamMulai($absensi['shift']);
             $jam_mulai_full = strtotime($absensi['tanggal_shift'] . ' ' . $jam_mulai);
             $absensi['status_telat'] = ($waktu_masuk > $jam_mulai_full) ? 'telat' : 'tepat waktu';
-    
+
             if ($status_telat && $absensi['status_telat'] !== $status_telat) {
                 continue;
             }
-    
+
             $absen_lat_masuk = (float)$absensi['latitude'];
             $absen_lon_masuk = (float)$absensi['longitude'];
             $absensi['lokasi_masuk'] = 'Tidak Diketahui';
@@ -374,7 +398,7 @@ class AbsensiModel {
                     break;
                 }
             }
-    
+
             $absensi['lokasi_keluar'] = $absensi['waktu_keluar'] ? 'Tidak Diketahui' : null;
             if ($absensi['waktu_keluar'] && $absensi['latitude_keluar'] && $absensi['longitude_keluar']) {
                 $absen_lat_keluar = (float)$absensi['latitude_keluar'];
@@ -387,11 +411,11 @@ class AbsensiModel {
                     }
                 }
             }
-    
+
             $filtered_list[] = $absensi;
         }
         unset($absensi);
-    
+
         return [
             'data' => $filtered_list,
             'total_records' => $total_records,
