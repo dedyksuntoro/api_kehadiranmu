@@ -11,7 +11,7 @@ class Admin {
     private $lokasi;
     private $absensi;
     private $user;
-    private $secret_key = "1q2w3e4r5t6y7u8i9o0p-[=]";
+    private $secret_key = "[FILL WITH YOUR OWN SECRETE KEY]";
 
     public function __construct() {
         $database = new Database();
