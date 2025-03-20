@@ -6,7 +6,7 @@ use \Firebase\JWT\JWT;
 
 class Absensi {
     private $absensi;
-    private $secret_key = "[FILL WITH YOUR OWN SECRETE KEY]";
+    private $secret_key = "[FILL WITH YOUR OWN SECRET KEY]";
 
     public function __construct() {
         $database = new Database();

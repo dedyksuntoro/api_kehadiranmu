@@ -6,8 +6,8 @@ use \Firebase\JWT\JWT;
 
 class Auth {
     private $user;
-    private $secret_key = "[FILL WITH YOUR OWN SECRETE KEY]"; // Kunci untuk access token
-    private $refresh_secret_key = "q1w2e3r4t5y6u7i8o9p0[-]="; // Kunci berbeda untuk refresh token
+    private $secret_key = "[FILL WITH YOUR OWN SECRET KEY]"; // Kunci untuk access token
+    private $refresh_secret_key = "[FILL IT WITH YOUR OWN SECRET KEY, BUT DIFFERENT FROM THE SECRET KEY]"; // Kunci berbeda untuk refresh token
 
     public function __construct() {
         $database = new Database();
